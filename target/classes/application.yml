@@ -1,0 +1,11 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: urlshortener
+  datasource:
+    url: ${DATASOURCE_URL}
+    driver-class-name: org.h2.Driver
+  h2:
+    console:
+      enabled: ${H2_CONSOLE_ENABLED:false}
