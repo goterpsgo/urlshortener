@@ -23,3 +23,15 @@ curl -X POST localhost:8080/api/links -H "Authorization: Bearer <token>" -H "Con
 ```
 
 One thing worth deciding next: right now, anyone can hit `/auth/register` and create an account — is that the intent (self-service signup), or should account creation be admin-only/invite-based for this app?
+
+## `JwtAuthenticationFilter` usage
+
+`JwtAuthenticationFilter` (`src/main/java/com/example/urlshortener/auth/JwtAuthenticationFilter.java`) is a Spring `OncePerRequestFilter` that runs once per incoming HTTP request:
+
+- It reads the `Authorization` header and checks for a `Bearer <token>` value.
+- If present, and no authentication is already set on the `SecurityContext`, it hands the token to `JwtService.isValid(token)`.
+- On a valid token, it extracts the username and role via `JwtService`, builds a `UsernamePasswordAuthenticationToken` with authority `ROLE_<role>`, attaches request details, and sets it on `SecurityContextHolder` — authenticating the request without a DB lookup.
+- If the header is missing, malformed, or the token is invalid, the filter does nothing and simply passes the request along; downstream authorization then denies it as unauthenticated.
+- The filter always calls `filterChain.doFilter(...)`, so it never short-circuits the chain itself.
+
+It's wired into `SecurityConfig` (`src/main/java/com/example/urlshortener/config/SecurityConfig.java:26,40`), which injects the `JwtAuthenticationFilter` bean and registers it with `http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)` — so JWT-based auth is evaluated before Spring Security's standard username/password filter, for every request except the `permitAll()` routes (`/auth/**`, `GET /{shortCode}`, `GET /app/**`, and optionally the H2 console).
