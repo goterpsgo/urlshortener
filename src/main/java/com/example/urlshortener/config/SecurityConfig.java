@@ -28,6 +28,7 @@ public class SecurityConfig {
 		http.authorizeHttpRequests(auth -> {
 			auth.requestMatchers("/auth/**").permitAll();
 			auth.requestMatchers(HttpMethod.GET, "/{shortCode}").permitAll();
+			auth.requestMatchers(HttpMethod.GET, "/app/**").permitAll();
 			if (h2ConsoleEnabled) {
 				auth.requestMatchers(PathRequest.toH2Console()).permitAll();
 			}

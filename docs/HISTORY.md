@@ -29,3 +29,9 @@
 # Documentation
 11. Split `HISTORY.md` out of the repo root into `docs/`, and added `docs/PATTERN.md` and `docs/SECURITY.md` alongside it; trimmed the root `README.md` down accordingly.
 12. Later added `docs/API_HOWTO.md` (endpoint usage guide) and a `docs/TESTING.md` HOW TO RUN section (Testcontainers mechanics + day-to-day test commands).
+
+# Frontend & local dev tooling
+13. Added the `frontend/` React + Vite app and `com.example.urlshortener.web.SpaForwardingController`, which forwards non-file `/app/**` routes to `/app/index.html` for client-side routing.
+14. Added a root `Procfile` (`web` + `frontend` processes) so Hivemind can run the backend and frontend together; documented in `README.md`.
+15. Regenerated the missing `.mvn/wrapper/` directory (`mvn -N wrapper:wrapper`) — `./mvnw` was broken because `maven-wrapper.properties` had never been committed.
+16. `SpaForwardingController`'s `/app/**/{path:[^.]*}` mapping isn't valid under Spring's default `PathPatternParser` (a `**` segment can't be followed by another pattern element), which surfaced as a startup error. Fixed by setting `spring.mvc.pathmatch.matching-strategy: ant_path_matcher` in `application.yml`, restoring the legacy matcher that supports this pattern.

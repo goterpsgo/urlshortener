@@ -4,13 +4,33 @@
 
 ### Starting the app
 
+#### Backend only
+
 `$ mvn spring-boot:run [-Dspring-boot.run.profiles=dev/test/prod]`
 
 - `-Dspring-boot.run.profiles` is optional
 
+#### Frontend only
+
+```
+$ cd frontend
+$ npm install
+$ npm run dev
+```
+
+#### Both (via Hivemind)
+
+Runs the backend and frontend together using the `Procfile` at the repo root.
+
+```
+$ brew install hivemind   # one-time setup
+$ hivemind
+```
+
 ### [DEV] Viewing the application
 
-<http://localhost:8080/>
+- Backend: <http://localhost:8080/>
+- Frontend: <http://localhost:5173/>
 
 ### Testing
 

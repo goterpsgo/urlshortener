@@ -3,6 +3,9 @@ spring:
     import: optional:file:.env[.properties]
   application:
     name: urlshortener
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
   datasource:
     url: ${DATASOURCE_URL}
     driver-class-name: org.h2.Driver
