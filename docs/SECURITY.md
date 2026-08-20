@@ -6,7 +6,7 @@ New com.example.urlshortener.auth package:
 
 - `AppUser` / `AppUserRepository` — user accounts backed by Postgres/H2 (`V2__create_users_table.sql`)
 - `CustomUserDetailsService` — loads users for Spring Security
-- `JwtService` — issues/validates HS512 JWTs (via jjwt, Apache 2.0 licensed) carrying username + role, signed with `JWT_SECRET`
+- `JwtService` — issues/validates HMAC-signed JWTs (via jjwt, Apache 2.0 licensed) carrying username + role, signed with `JWT_SECRET`. The exact algorithm (HS256/HS384/HS512) is chosen by jjwt's `Keys.hmacShaKeyFor()` based on the byte length of `JWT_SECRET` — it isn't hardcoded, so it only lands on HS512 if the configured secret is at least 64 bytes.
 - `JwtAuthenticationFilter` — reads Authorization: Bearer `<token>`, populates the security context per-request (no DB hit needed per request)
 - `RegisterRequest`/`LoginRequest`/`AuthResponse` DTOs + AuthController — `POST /auth/register`, `POST /auth/login`
 
