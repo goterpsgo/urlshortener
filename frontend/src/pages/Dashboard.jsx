@@ -4,7 +4,7 @@ import { createLink } from '../api'
 import { useAuth } from '../AuthContext'
 
 export default function Dashboard() {
-  const { logout } = useAuth()
+  const { logout, features } = useAuth()
   const [originalUrl, setOriginalUrl] = useState('')
   const [links, setLinks] = useState([])
   const [error, setError] = useState(null)
@@ -27,6 +27,7 @@ export default function Dashboard() {
         <h1>Shorten a URL</h1>
         <nav>
           <RouterLink to="/links">My Links</RouterLink>
+          <RouterLink to="/toggles">Feature Toggles</RouterLink>
         </nav>
         <button type="button" onClick={logout}>
           Log out

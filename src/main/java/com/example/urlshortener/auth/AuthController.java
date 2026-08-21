@@ -5,8 +5,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -56,6 +58,14 @@ public class AuthController {
 		AppUser appUser = appUserRepository.findByUsername(request.username()).orElseThrow();
 		String token = jwtService.generateToken(appUser.getUsername(), appUser.getRole());
 		return ResponseEntity.ok(new AuthResponse(token));
+	}
+
+	@GetMapping("/api/me")
+	public MeResponse me(Authentication authentication) {
+		boolean isAdmin = authentication.getAuthorities()
+			.stream()
+			.anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+		return new MeResponse(authentication.getName(), isAdmin);
 	}
 
 }

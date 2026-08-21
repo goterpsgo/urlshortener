@@ -1,10 +1,33 @@
-import { createContext, useContext, useState } from 'react'
-import { clearToken, getToken, login as apiLogin, register as apiRegister, setToken } from './api'
+import { createContext, useContext, useEffect, useState } from 'react'
+import {
+  clearToken,
+  getFeatures,
+  getMe,
+  getToken,
+  login as apiLogin,
+  register as apiRegister,
+  setToken,
+  updateFeatures as apiUpdateFeatures,
+} from './api'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [token, setTokenState] = useState(getToken())
+  const [features, setFeatures] = useState({})
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    getFeatures()
+      .then(setFeatures)
+      .catch(() => setFeatures({}))
+  }, [token])
+
+  useEffect(() => {
+    getMe()
+      .then((me) => setIsAdmin(me.isAdmin))
+      .catch(() => setIsAdmin(false))
+  }, [token])
 
   async function login(username, password) {
     const { token } = await apiLogin(username, password)
@@ -23,8 +46,14 @@ export function AuthProvider({ children }) {
     setTokenState(null)
   }
 
+  async function setFeatureOverride(overrides) {
+    const updated = await apiUpdateFeatures(overrides)
+    setFeatures(updated)
+    return updated
+  }
+
   return (
-    <AuthContext.Provider value={{ token, login, register, logout }}>
+    <AuthContext.Provider value={{ token, login, register, logout, features, setFeatureOverride, isAdmin }}>
       {children}
     </AuthContext.Provider>
   )

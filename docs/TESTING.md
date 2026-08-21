@@ -98,7 +98,7 @@ One thing worth checking: what dependency does the other project actually need (
 
 Docker must be running locally before you run tests — `UrlshortenerApplicationTests` starts a real Postgres container via Testcontainers. If Docker isn't running, the test fails with a connection error to the Docker daemon (e.g. `Could not find a valid Docker environment`).
 
-`DATASOURCE_URL` and friends don't need to be set — `@ServiceConnection` on the `postgres` field auto-configures the datasource against the running container, overriding whatever is in `application.yml`. However, `JWT_SECRET` (bound via `@Value("${app.jwt.secret}")` in `JwtService`, no default value) still must resolve for the Spring context to start, since `@SpringBootTest` boots the full application — Testcontainers only replaces the datasource, not other required properties. Provide it via a local `.env` file (gitignored; see `.env.example`) or an exported `JWT_SECRET` env var before running tests.
+`DATASOURCE_URL` and friends don't need to be set — `@ServiceConnection` on the `postgres` field auto-configures the datasource against the running container, overriding whatever is in `application.yml`. However, `JWT_SECRET` (bound via `@Value("${app.jwt.secret}")` in `JwtService`, no default value) and, as of the admin-bootstrap migration, `ADMIN_USERNAME`/`ADMIN_PASSWORD_HASH` (used as Flyway placeholders in `V5__seed_admin_user.sql`, also no defaults) still must resolve for the Spring context to start, since `@SpringBootTest` boots the full application and runs all migrations — Testcontainers only replaces the datasource, not other required properties. Provide them via a local `.env` file (gitignored; see `.env.example`) or exported env vars before running tests.
 
 ## Run all tests
 

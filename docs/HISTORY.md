@@ -43,3 +43,24 @@
 
 # Frontend E2E testing (2026-08-21)
 20. Added `@playwright/test` to `frontend/` with `playwright.config.js` (`webServer` entries that start/reuse the Vite dev server and `./mvnw spring-boot:run`) and one spec (`e2e/links.spec.js`) covering register → shorten a URL → edit it from the Links page. `npm run test:e2e` / `test:e2e:ui` scripts added. See `docs/TESTING.md`'s "FRONTEND E2E (Playwright)" section.
+
+# Feature flags (2026-08-21)
+21. Added a `com.example.urlshortener.feature` package for gating one upcoming feature (the Dashboard `h1`'s green styling) with both a per-environment default and a per-user override:
+    - `db/migration/V4__add_feature_flags_to_users.sql` adds a nullable `users.h1_green_enabled` column — `NULL` means "use the environment default", `true`/`false` overrides it per user.
+    - `app.features.h1-green` in `application.yml`, backed by `FEATURE_H1_GREEN` (see `.env.example`), is the environment-level default.
+    - `FeatureFlagService.isH1GreenEnabled(username)` resolves the override-or-default; `FeatureFlagController` exposes it at `GET /api/features` as `{"h1Green": bool}`.
+    - `FeatureFlagServiceTest` covers the resolution precedence (override wins, falls back to default, unknown/anonymous user falls back to default) with a mocked repository — no DB/Testcontainers needed.
+    - Frontend: `AuthContext` fetches `/api/features` on mount and whenever the token changes, exposing `features` via `useAuth()`; `Dashboard`'s `<h1>` and a demo label on `Login` conditionally get `className="green"`, which `App.css`'s `h1.green { color: green; }` rule targets.
+22. Made `GET /api/features` public (`SecurityConfig`) so anonymous, pre-login pages (`Login`) can read the environment default — `JwtAuthenticationFilter` still runs on the request, so a valid Bearer token still resolves to that user's per-user override; anonymous requests (detected via `AnonymousAuthenticationToken`, not a null `Authentication`, since Spring Security's anonymous filter always populates one) get the environment default only. See `docs/SECURITY.md`'s "Public feature-flag defaults" section for why this is safe to expose.
+23. Added self-service override management, replacing the "direct DB edit" note above:
+    - `FeatureFlagService.getH1GreenOverride(username)` (raw override, or `null`) and `setH1GreenOverride(username, override)` (persists via `AppUserRepository`, with a new `AppUser.setH1GreenEnabled` setter).
+    - `FeatureFlagsResponse` now also carries `h1GreenOverride` alongside the resolved `h1Green`, so a client can tell "using the default" apart from "explicitly set to the same value as the default".
+    - `PUT /api/features` (`UpdateFeatureFlagsRequest{h1Green: Boolean}`) sets the *caller's own* override — `true`/`false` to force it, `null` to clear it back to the environment default. Stays behind `anyRequest().authenticated()` (only the `GET` is public).
+    - Frontend: `AuthContext.setFeatureOverride(overrides)` calls the API and syncs `features` in one step; new `frontend/src/pages/Toggles.jsx` (route `/toggles`, linked from the Dashboard and Links nav) is a radio-button UI (default / on / off) for the `h1Green` override, showing the resolved effective value too.
+24. Added admin-by-id management, gated behind a new `ADMIN` role (previously every account was `USER`):
+    - `db/migration/V5__seed_admin_user.sql` seeds one `ADMIN` account using Flyway placeholders (`admin-username`/`admin-password-hash`, wired in `application.yml`'s `spring.flyway.placeholders`) resolved from required `ADMIN_USERNAME`/`ADMIN_PASSWORD_HASH` env vars — no default, same pattern as `JWT_SECRET`. See `.env.example` and `docs/SECURITY.md`'s "Admin bootstrap" section for how to generate the bcrypt hash.
+    - `FeatureFlagService` gained `findUserById`, `setH1GreenOverrideForUserId`, and a public `resolve(Boolean override)` helper (the override-or-default logic, now shared instead of duplicated).
+    - New `AdminFeatureFlagController` / `AdminFeatureFlagsResponse` (adds `userId`/`username` to the shape) expose `GET`/`PUT /api/admin/users/{userId}/features`, gated in `SecurityConfig` via `auth.requestMatchers("/api/admin/**").hasRole("ADMIN")` — not `@PreAuthorize`, since method security isn't enabled in this app.
+    - New `GET /api/me` (`AuthController`, `MeResponse{username, isAdmin}`) lets the frontend know whether to show admin UI, derived from the authenticated `Authentication`'s `ROLE_ADMIN` authority — added specifically so the frontend doesn't need to decode the JWT itself.
+    - Frontend: `AuthContext` fetches `/api/me` alongside `/api/features` and exposes `isAdmin`; `Toggles.jsx` renders an admin-only section (look up a user by id, then the same default/on/off radio UI) when `isAdmin` is true.
+    - `AuthControllerTest` and `FeatureFlagServiceTest` extended for the new logic — all via mocks, no DB/Testcontainers needed.

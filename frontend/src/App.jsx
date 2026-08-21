@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard'
 import Links from './pages/Links'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import Toggles from './pages/Toggles'
 import './App.css'
 
 function RequireAuth({ children }) {
@@ -29,6 +30,14 @@ function AppRoutes() {
         element={
           <RequireAuth>
             <Links />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/toggles"
+        element={
+          <RequireAuth>
+            <Toggles />
           </RequireAuth>
         }
       />

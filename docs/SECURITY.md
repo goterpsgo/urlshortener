@@ -12,7 +12,7 @@ New com.example.urlshortener.auth package:
 
 Rewired SecurityConfig: stateless sessions, CSRF disabled (correct for token-based auth, no cookies involved), PasswordEncoder (BCrypt) + AuthenticationManager beans, JWT filter registered ahead of the standard auth filter.
 
-Authorization: every user gets role USER today, and the role is embedded in the JWT as a claim → mapped to `ROLE_USER` as a Spring Security authority. There's no admin-gated endpoint yet, but the plumbing is live — `.hasRole("ADMIN")` in `SecurityConfig`, or `@PreAuthorize("hasRole('ADMIN')")` on a controller method, works today whenever you add one.
+Authorization: every account created via `/auth/register` gets role USER — there's no way to self-register as `ADMIN`. The role is embedded in the JWT as a claim → mapped to `ROLE_<role>` as a Spring Security authority. The first (and currently only) `ADMIN`-gated resource is `/api/admin/**` (see "Admin-gated user management" below), authorized via `.hasRole("ADMIN")` in `SecurityConfig` rather than `@PreAuthorize` — method security (`@EnableMethodSecurity`) isn't enabled in this app, so a future admin-only controller method should follow the same `SecurityConfig` request-matcher pattern rather than reaching for `@PreAuthorize`.
 
 How to use it:
 
@@ -42,3 +42,30 @@ Being authenticated is enough to hit `GET /api/links` or `PUT /api/links/{id}`, 
 
 - Listing only ever returns the caller's own links.
 - Editing a link that exists but belongs to another user returns `404 Not Found`, identical to editing an id that doesn't exist at all — this is deliberate: it prevents an attacker from using the response code to enumerate which link ids exist (an IDOR/enumeration guard, not just an access-control check).
+
+## Public feature-flag defaults
+
+`GET /api/features` is intentionally on the `permitAll()` list (`SecurityConfig`) — unlike `/api/links`, this is deliberate, not an oversight:
+
+- The response only ever contains the environment-level default (or an authenticated user's own override) — never another user's override, and never anything else about the account. There's nothing in `FeatureFlagsResponse` that's sensitive to expose to a logged-out visitor.
+- Pre-login pages (`Login`) need this to render feature-gated UI correctly before a user has a token.
+- `FeatureFlagController` distinguishes anonymous from authenticated callers by checking for `AnonymousAuthenticationToken`, not a null `Authentication` — Spring Security's anonymous-authentication filter always populates *some* `Authentication` (principal `"anonymousUser"`), so a null check alone would never trigger and every request would incorrectly try a per-user lookup.
+
+If a future flag's payload ever needs to carry something user-specific beyond a boolean, reconsider this — `permitAll()` here assumes the response is safe for anyone to read.
+
+## Self-service feature-flag overrides
+
+`PUT /api/features` is *not* on the `permitAll()` list — setting an override requires a valid Bearer token, and `FeatureFlagController.updateFeatures` always uses `authentication.getName()` as the target, with no id or username field in the request body. There's no way to set another user's override through this endpoint, self-service by construction rather than by a check that could be bypassed. Setting *someone else's* flag requires the separate, role-gated endpoint below.
+
+## Admin-gated user management
+
+`GET`/`PUT /api/admin/users/{userId}/features` let an admin view or set *any* user's `h1Green` override by numeric id — this is the one place in the app where a user can act on another account, so it's deliberately narrow:
+
+- Gated in `SecurityConfig` with `auth.requestMatchers("/api/admin/**").hasRole("ADMIN")`, evaluated before the catch-all `anyRequest().authenticated()` — a non-admin (or anonymous) caller gets `403`, verified for both cases.
+- `AdminFeatureFlagController` never accepts a username in the body, only a path-variable `userId` looked up via `AppUserRepository.findById` — an unknown id returns `404`, not a silent no-op.
+- The response (`AdminFeatureFlagsResponse`) includes the target's `username` so the admin UI can confirm which account it's about to change before submitting.
+- There's no audit log of who changed what — worth adding if this pattern grows beyond one boolean flag.
+
+## Admin bootstrap
+
+The first `ADMIN` account is seeded by `db/migration/V5__seed_admin_user.sql` rather than created through the API (there's intentionally no "promote to admin" endpoint — that would be a privilege-escalation surface). The migration inserts one row using Flyway placeholders (`${admin-username}` / `${admin-password-hash}`, configured in `application.yml`'s `spring.flyway.placeholders`), resolved from the required `ADMIN_USERNAME` / `ADMIN_PASSWORD_HASH` env vars (see `.env.example`) — same pattern as `JWT_SECRET`: no default, so the app won't start without them, and the actual password never appears in a committed file. `ADMIN_PASSWORD_HASH` must be a bcrypt hash (e.g. produced by the app's own `BCryptPasswordEncoder`, or any bcrypt-compatible tool) — never a plaintext password. Because Flyway only ever runs a given migration once per database, this seed doesn't re-run (or re-insert) on every restart; promoting additional admins today means a direct `UPDATE users SET role = 'ADMIN' WHERE username = ...`, matching the "direct DB edit" pattern already used for per-user feature overrides before the self-service endpoint existed.

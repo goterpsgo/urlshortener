@@ -30,6 +30,9 @@ public class AppUser {
 	@Column(nullable = false, length = 20)
 	private String role;
 
+	@Column(name = "h1_green_enabled")
+	private Boolean h1GreenEnabled;
+
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
@@ -37,6 +40,10 @@ public class AppUser {
 		this.username = username;
 		this.passwordHash = passwordHash;
 		this.role = role;
+	}
+
+	public void setH1GreenEnabled(Boolean h1GreenEnabled) {
+		this.h1GreenEnabled = h1GreenEnabled;
 	}
 
 	@PrePersist

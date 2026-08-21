@@ -63,6 +63,7 @@ export default function Links() {
         <h1>My Links</h1>
         <nav>
           <RouterLink to="/">Shorten a URL</RouterLink>
+          <RouterLink to="/toggles">Feature Toggles</RouterLink>
         </nav>
         <button type="button" onClick={logout}>
           Log out

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../AuthContext'
 
 export default function Login() {
-  const { login } = useAuth()
+  const { login, features } = useAuth()
   const navigate = useNavigate()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -36,6 +36,11 @@ export default function Login() {
       <p>
         No account? <Link to="/register">Register</Link>
       </p>
+      {features.h1Green && (
+        <h1 className="green">
+          This is a green label
+        </h1>
+      )}
     </form>
   )
 }

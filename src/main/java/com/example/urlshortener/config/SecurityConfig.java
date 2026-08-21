@@ -29,6 +29,8 @@ public class SecurityConfig {
 			auth.requestMatchers("/auth/**").permitAll();
 			auth.requestMatchers(HttpMethod.GET, "/{shortCode}").permitAll();
 			auth.requestMatchers(HttpMethod.GET, "/app/**").permitAll();
+			auth.requestMatchers(HttpMethod.GET, "/api/features").permitAll();
+			auth.requestMatchers("/api/admin/**").hasRole("ADMIN");
 			if (h2ConsoleEnabled) {
 				auth.requestMatchers(PathRequest.toH2Console()).permitAll();
 			}

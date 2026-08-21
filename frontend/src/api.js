@@ -52,3 +52,23 @@ export function listLinks() {
 export function updateLink(id, originalUrl) {
   return request(`/api/links/${id}`, { method: 'PUT', body: JSON.stringify({ originalUrl }) })
 }
+
+export function getFeatures() {
+  return request('/api/features')
+}
+
+export function updateFeatures(overrides) {
+  return request('/api/features', { method: 'PUT', body: JSON.stringify(overrides) })
+}
+
+export function getMe() {
+  return request('/api/me')
+}
+
+export function getFeaturesForUser(userId) {
+  return request(`/api/admin/users/${userId}/features`)
+}
+
+export function updateFeaturesForUser(userId, overrides) {
+  return request(`/api/admin/users/${userId}/features`, { method: 'PUT', body: JSON.stringify(overrides) })
+}
