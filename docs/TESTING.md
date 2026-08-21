@@ -131,3 +131,31 @@ First run pulls the `postgres:17-alpine` image if it isn't already cached locall
 - **"Could not find a valid Docker environment" / connection refused**: start Docker Desktop (or your Docker daemon) and re-run.
 - **Image pull failures**: check network access to Docker Hub, or that an internal registry mirror is configured if your network restricts external pulls.
 - **Container fails to become ready / timeout**: usually a resource issue (low memory/CPU on the Docker host) — increase Docker Desktop's resource allocation.
+
+# FRONTEND E2E (Playwright)
+
+`frontend/` has a Playwright suite (`@playwright/test`) that drives the real app in a browser — register → shorten a URL → edit it from the Links page — rather than testing components in isolation.
+
+## Setup (one-time)
+
+```bash
+cd frontend
+npm install
+npx playwright install chromium
+```
+
+`npx playwright install` downloads a pinned Chromium build to `~/Library/Caches/ms-playwright` (or the OS equivalent). If your network sits behind a proxy that intercepts `cdn.playwright.dev` with a certificate Node doesn't trust, this download will fail with `SELF_SIGNED_CERT_IN_CHAIN` — that's a proxy/network config issue, not a Playwright config issue; get the download unblocked (or add the proxy's CA to `NODE_EXTRA_CA_CERTS`) rather than working around it in the suite.
+
+## Run the tests
+
+```bash
+cd frontend
+npm run test:e2e        # headless
+npm run test:e2e:ui     # Playwright's UI mode, for debugging
+```
+
+`playwright.config.js`'s `webServer` entries start the Vite dev server (port 5173) and the Spring Boot backend (`./mvnw spring-boot:run` from the repo root, port 8080) automatically if they aren't already running, and reuse them if they are (`reuseExistingServer: true`) — so `npm run test:e2e` works standalone or alongside `hivemind`. The backend needs the same `.env` (`JWT_SECRET`, etc.) as normal local dev.
+
+Each test run registers a fresh, uniquely-named user (`e2e_<timestamp>_<random>`) against the H2 in-memory database, so runs don't collide with each other or leave state you need to clean up.
+
+A failed run writes a trace/screenshot to `frontend/test-results/` and an HTML report to `frontend/playwright-report/` (both gitignored) — open the report with `npx playwright show-report` from `frontend/`.

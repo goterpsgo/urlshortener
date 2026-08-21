@@ -36,6 +36,14 @@ $ hivemind
 
 `$ mvn test`
 
+Frontend end-to-end tests (Playwright) — see [TESTING](./docs/TESTING.md#frontend-e2e-playwright):
+
+```
+$ cd frontend
+$ npx playwright install chromium   # one-time
+$ npm run test:e2e
+```
+
 ### [DEV] Viewing the database
 
 - <http://localhost:8080/h2-console/>

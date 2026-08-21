@@ -40,3 +40,6 @@
 17. Added `owner_username` to `Link` (`db/migration/V3__add_owner_to_links.sql`), set from the authenticated user at creation time — links are now scoped per account instead of globally visible.
 18. `LinkController` gained `GET /api/links` (list the caller's own links, newest first) and `PUT /api/links/{id}` (edit a link's `originalUrl`, scoped to the owner — `404` for anyone else's id, not `403`, so ids can't be enumerated by response code). `LinkResponse` now includes `id` so the frontend has something to target for edits. See `docs/PATTERN.md`'s "Ownership-scoped reads/writes" section and `docs/SECURITY.md`'s "Link ownership" section.
 19. Added `frontend/src/pages/Links.jsx` — a `/links` page listing the user's links with inline edit/save/cancel per row — linked from the Dashboard nav ("My Links"). Follows the existing page pattern (local `useState`, calls `api.js` directly, no data-fetching library).
+
+# Frontend E2E testing (2026-08-21)
+20. Added `@playwright/test` to `frontend/` with `playwright.config.js` (`webServer` entries that start/reuse the Vite dev server and `./mvnw spring-boot:run`) and one spec (`e2e/links.spec.js`) covering register → shorten a URL → edit it from the Links page. `npm run test:e2e` / `test:e2e:ui` scripts added. See `docs/TESTING.md`'s "FRONTEND E2E (Playwright)" section.
