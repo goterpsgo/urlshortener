@@ -27,11 +27,19 @@ public class Link {
 	@Column(name = "original_url", nullable = false, length = 2048)
 	private String originalUrl;
 
+	@Column(name = "owner_username", length = 100)
+	private String ownerUsername;
+
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
-	public Link(String shortCode, String originalUrl) {
+	public Link(String shortCode, String originalUrl, String ownerUsername) {
 		this.shortCode = shortCode;
+		this.originalUrl = originalUrl;
+		this.ownerUsername = ownerUsername;
+	}
+
+	public void setOriginalUrl(String originalUrl) {
 		this.originalUrl = originalUrl;
 	}
 

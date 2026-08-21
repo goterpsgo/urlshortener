@@ -35,3 +35,8 @@
 14. Added a root `Procfile` (`web` + `frontend` processes) so Hivemind can run the backend and frontend together; documented in `README.md`.
 15. Regenerated the missing `.mvn/wrapper/` directory (`mvn -N wrapper:wrapper`) — `./mvnw` was broken because `maven-wrapper.properties` had never been committed.
 16. `SpaForwardingController`'s `/app/**/{path:[^.]*}` mapping isn't valid under Spring's default `PathPatternParser` (a `**` segment can't be followed by another pattern element), which surfaced as a startup error. Fixed by setting `spring.mvc.pathmatch.matching-strategy: ant_path_matcher` in `application.yml`, restoring the legacy matcher that supports this pattern.
+
+# Link ownership, list, and edit (2026-08-21)
+17. Added `owner_username` to `Link` (`db/migration/V3__add_owner_to_links.sql`), set from the authenticated user at creation time — links are now scoped per account instead of globally visible.
+18. `LinkController` gained `GET /api/links` (list the caller's own links, newest first) and `PUT /api/links/{id}` (edit a link's `originalUrl`, scoped to the owner — `404` for anyone else's id, not `403`, so ids can't be enumerated by response code). `LinkResponse` now includes `id` so the frontend has something to target for edits. See `docs/PATTERN.md`'s "Ownership-scoped reads/writes" section and `docs/SECURITY.md`'s "Link ownership" section.
+19. Added `frontend/src/pages/Links.jsx` — a `/links` page listing the user's links with inline edit/save/cancel per row — linked from the Dashboard nav ("My Links"). Follows the existing page pattern (local `useState`, calls `api.js` directly, no data-fetching library).

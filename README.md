@@ -44,6 +44,8 @@ $ hivemind
 
 ## Additional documentation
 
+- [API_HOWTO](./docs/API_HOWTO.md)
 - [HISTORY](./docs/HISTORY.md)
 - [PATTERN](./docs/PATTERN.md)
 - [SECURITY](./docs/SECURITY.md)
+- [TESTING](./docs/TESTING.md)

@@ -1,6 +1,7 @@
 import { Navigate, Route, BrowserRouter, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './AuthContext'
 import Dashboard from './pages/Dashboard'
+import Links from './pages/Links'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import './App.css'
@@ -20,6 +21,14 @@ function AppRoutes() {
         element={
           <RequireAuth>
             <Dashboard />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/links"
+        element={
+          <RequireAuth>
+            <Links />
           </RequireAuth>
         }
       />

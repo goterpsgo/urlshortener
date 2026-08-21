@@ -44,3 +44,11 @@ export function login(username, password) {
 export function createLink(originalUrl) {
   return request('/api/links', { method: 'POST', body: JSON.stringify({ originalUrl }) })
 }
+
+export function listLinks() {
+  return request('/api/links')
+}
+
+export function updateLink(id, originalUrl) {
+  return request(`/api/links/${id}`, { method: 'PUT', body: JSON.stringify({ originalUrl }) })
+}

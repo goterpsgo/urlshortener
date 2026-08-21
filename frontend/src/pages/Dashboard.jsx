@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link as RouterLink } from 'react-router-dom'
 import { createLink } from '../api'
 import { useAuth } from '../AuthContext'
 
@@ -24,6 +25,9 @@ export default function Dashboard() {
     <div>
       <header>
         <h1>Shorten a URL</h1>
+        <nav>
+          <RouterLink to="/links">My Links</RouterLink>
+        </nav>
         <button type="button" onClick={logout}>
           Log out
         </button>

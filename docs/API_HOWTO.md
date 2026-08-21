@@ -17,6 +17,7 @@ curl -X POST http://localhost:8080/auth/register \
 ```
 
 Requirements:
+
 - `username`: 3–100 characters, required
 - `password`: minimum 8 characters, required
 
@@ -77,7 +78,46 @@ Response — `201 Created`:
 
 Missing or invalid token → `403 Forbidden`. (`SecurityConfig` doesn't configure a custom authentication entry point, so Spring Security falls back to its default `Http403ForbiddenEntryPoint` rather than `401 Unauthorized`.)
 
-## 4. Follow a short link
+## 4. List your links
+
+Also requires authentication, and only returns links created by the calling user:
+
+```bash
+curl http://localhost:8080/api/links \
+  -H "Authorization: Bearer eyJhbGciOiJIUzUxMiJ9..."
+```
+
+Response — `200 OK`, newest first:
+
+```json
+[
+  {
+    "id": 1,
+    "shortCode": "aZ3x9Q",
+    "shortUrl": "http://localhost:8080/aZ3x9Q",
+    "originalUrl": "https://example.com/some/very/long/path"
+  }
+]
+```
+
+## 5. Edit a link
+
+Updates the destination URL of a link you own, identified by its `id` (from create or list):
+
+```bash
+curl -X PUT http://localhost:8080/api/links/1 \
+  -H "Authorization: Bearer eyJhbGciOiJIUzUxMiJ9..." \
+  -H "Content-Type: application/json" \
+  -d '{"originalUrl": "https://example.com/a-different-path"}'
+```
+
+`originalUrl` has the same validation as create. The `shortCode` and `shortUrl` are unchanged — only the redirect target updates.
+
+Response — `200 OK` with the updated link, same shape as list/create.
+
+Editing a link you don't own — or one that doesn't exist — returns `404 Not Found` (not `403`), so ownership can't be probed by id.
+
+## 6. Follow a short link
 
 Redirects are public — no token needed:
 
@@ -114,10 +154,13 @@ curl -i http://localhost:8080/<shortCode-from-response>
 | POST | `/auth/register` | No | Create an account, get a token |
 | POST | `/auth/login` | No | Get a token for an existing account |
 | POST | `/api/links` | Yes (Bearer token) | Shorten a URL |
+| GET | `/api/links` | Yes (Bearer token) | List your own links |
+| PUT | `/api/links/{id}` | Yes (Bearer token) | Edit a link you own |
 | GET | `/{shortCode}` | No | Redirect to the original URL |
 
 ## Notes
 
 - All authenticated requests use `Authorization: Bearer <token>` — no cookies or sessions are involved (the API is stateless).
 - Every new account currently gets the `USER` role; there's no admin-only endpoint yet.
+- Links are scoped to the account that created them: `GET /api/links` and `PUT /api/links/{id}` only ever see/touch the calling user's own links.
 - This is a development/testing guide — treat any token or credential used here as a draft, and don't reuse example credentials for real accounts.

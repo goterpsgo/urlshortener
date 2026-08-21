@@ -35,3 +35,10 @@ One thing worth deciding next: right now, anyone can hit `/auth/register` and cr
 - The filter always calls `filterChain.doFilter(...)`, so it never short-circuits the chain itself.
 
 It's wired into `SecurityConfig` (`src/main/java/com/example/urlshortener/config/SecurityConfig.java:26,40`), which injects the `JwtAuthenticationFilter` bean and registers it with `http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)` — so JWT-based auth is evaluated before Spring Security's standard username/password filter, for every request except the `permitAll()` routes (`/auth/**`, `GET /{shortCode}`, `GET /app/**`, and optionally the H2 console).
+
+## Link ownership (authorization, not just authentication)
+
+Being authenticated is enough to hit `GET /api/links` or `PUT /api/links/{id}`, but not enough to see or edit *anyone's* links — each `Link` row now carries `owner_username` (`V3__add_owner_to_links.sql`), set from `Authentication.getName()` at creation time. `LinkRepository.findByOwnerUsernameOrderByCreatedAtDesc` / `findByIdAndOwnerUsername` do the scoping at the query level, so:
+
+- Listing only ever returns the caller's own links.
+- Editing a link that exists but belongs to another user returns `404 Not Found`, identical to editing an id that doesn't exist at all — this is deliberate: it prevents an attacker from using the response code to enumerate which link ids exist (an IDOR/enumeration guard, not just an access-control check).
